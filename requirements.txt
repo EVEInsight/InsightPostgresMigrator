@@ -1,0 +1,2 @@
+psycopg2>=2.8.5,<3
+python-dateutil>=2.8.1,<3
