@@ -11,12 +11,14 @@ import decimal
 from psycopg2 import extras
 
 REQUIRED_SQLITE_VERSION = LooseVersion("v2.6.0")
-SQLITE_PATH = os.getenv("SQLITE_DB_PATH")
+SQLITE_PATH = os.getenv("SQLITE_DB")
 POSTGRES_HOST = os.getenv("POSTGRES_HOST")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT")
 POSTGRES_USER = os.getenv("POSTGRES_USER")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 POSTGRES_DB = os.getenv("POSTGRES_DB")
+INSIGHT_PATH = os.getenv("INSIGHT_PATH")
+PGLOADER_PATH = os.getenv("PGLOADER_PATH") if os.getenv("PGLOADER_PATH") is not None else "pgloader"
 pg_connection_str = "postgresql://{}:{}@{}:{}/{}".format(POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST,
                                                          POSTGRES_PORT, POSTGRES_DB)
 
@@ -197,13 +199,23 @@ def sqlite_apply_remediations():
     sqlite_remediation("filter_types")
 
 
+def cast_rules():
+    yield "type integer to integer using integer-to-string"
+
+
+def get_cast_rules():
+    rules = ""
+    for r in list(cast_rules()):
+        rules += "--cast \"{}\" ".format(r)
+    return rules.strip()
+
 def check_sqlite_db_version():
     print("Checking the current SQLITE DB version...")
     if not SQLITE_PATH:
         print("SQLITE 'SQLITE_DB_PATH' var is not set. Exiting.")
         sys.exit(1)
     if not os.path.exists(SQLITE_PATH):
-        print("{} does not exist.".format(SQLITE_PATH))
+        print("'{}' does not exist. Exiting...".format(SQLITE_PATH))
         sys.exit(1)
     connection = None
     try:
@@ -228,6 +240,21 @@ def check_sqlite_db_version():
             connection.close()
 
 
+def import_insight_schema():
+    print("Importing Insight schema to target database...")
+    try:
+        cmd = "python3 {} --schema-import".format(INSIGHT_PATH)
+        r = subprocess.run(cmd, shell=True)
+        if r.returncode == 0:
+            print("{} - Success importing the Insight schema!".format(datetime.datetime.utcnow()))
+        else:
+            print("{} - Error when importing Insight schema. Exit code: {}".format(datetime.datetime.utcnow(), r.returncode))
+            sys.exit(1)
+    except Exception as ex:
+        print(ex)
+        sys.exit(1)
+
+
 def check_postgres_db():
     print("Checking postgres database for migration...")
     c = None
@@ -238,6 +265,9 @@ def check_postgres_db():
         cursor.execute("SELECT count(*) FROM information_schema.tables where table_schema = 'public'")
         r = cursor.fetchone()
         table_count = int(r[0])
+        if table_count > 0:
+            print("Error - The destination database is not empty. You can only migrate to an empty database. No changes were made.")
+            sys.exit(1)
     except Exception as ex:
         print(ex)
         traceback.print_exc()
@@ -282,13 +312,12 @@ def run_migration(log_file: str):
     print("Running migration from SQLite to Postgres. The summary log is located at {}. "
           "This may take some time...".format(log_file))
     try:
-        cmd = 'pgloader --on-error-stop --summary {} --with "prefetch rows = 50000" ' \
+        cmd = '{} --on-error-stop --summary {} --with "prefetch rows = 50000" ' \
               '--with "data only" --with "truncate" --with "create no tables" --with "include no drop" ' \
-              '--with "drop indexes" --with "create no indexes" --with "on error stop" --with "reset sequences" ' \
+              '--with "create no indexes" --with "drop indexes" --with "on error stop" --with "reset sequences" ' \
               '--with "quote identifiers" --set "client_min_messages = \'error\'" ' \
-              '--cast "type integer to integer   using integer-to-string" ' \
-              '--cast "type character varying to character varying   using integer-to-string" ' \
-              '{} {}'.format(log_file, SQLITE_PATH, pg_connection_str)
+              '{} ' \
+              '{} {}'.format(PGLOADER_PATH, log_file, get_cast_rules(), SQLITE_PATH, pg_connection_str)
         r = subprocess.run(cmd, shell=True)
         if r.returncode == 0:
             print("{} - Success migrating the database!".format(datetime.datetime.utcnow()))
@@ -300,9 +329,11 @@ def run_migration(log_file: str):
 
 
 def main():
+    start_time = datetime.datetime.utcnow()
     t = datetime.datetime.utcnow().strftime("%d-%m-Y-%H%M%S")
     check_sqlite_db_version()
     check_postgres_db()
+    import_insight_schema()
     sqlite_apply_remediations()
     dump_schema("/app/schema_preimport_{}.sql".format(t))
     log_file = "/app/postgres_migrate_{}.log".format(t)
@@ -310,8 +341,9 @@ def main():
     dump_schema("/app/schema_postimport_{}.sql".format(t))
     check_summary(log_file)
     run_integrity_checks()
+    total_seconds = (datetime.datetime.utcnow() - start_time).total_seconds()
     print("Success! All data was successfully copied to postgres! You may start using the newly migrated "
-          "postgres database with Insight!")
+          "postgres database with Insight!\n\nTotal time taken: {}s".format(total_seconds))
 
 
 if __name__ == "__main__":

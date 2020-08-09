@@ -1,6 +1,9 @@
-FROM dimitri/pgloader:latest
+ARG INSIGHT_BRANCH=master
+FROM nathanls/insight:$INSIGHT_BRANCH
+
+LABEL url="https://github.com/Nathan-LS/InsightPostgresMigrator"
 LABEL maintainer="nathan@nathan-s.com"
-LABEL url="https://github.com/Nathan-LS/Insight"
+
 ARG PGLOADER_VERSION="master"
 ENV PYTHONUNBUFFERED=1
 ENV POSTGRES_HOST=""
@@ -8,38 +11,51 @@ ENV POSTGRES_PORT=5432
 ENV POSTGRES_USER=""
 ENV POSTGRES_PASSWORD=""
 ENV POSTGRES_DB=""
-ENV SQLITE_DB_PATH="Database.db"
+ENV SQLITE_DB="Database.db"
+ENV INSIGHT_PATH="/InsightDocker/Insight/Insight"
 
-RUN apt-get update && apt-get install -y \
- apt-utils \
- curl \
- ca-certificates \
- gnupg \
- lsb-release
-RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-RUN curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 
+#do not change
+ENV DB_DRIVER="postgres"
+ENV DISCORD_TOKEN="null"
+ENV CCP_CLIENT_ID="null"
+ENV CCP_SECRET_KEY="null"
+ENV CCP_CALLBACK_URL="null"
+ENV HEADERS_FROM_EMAIL="admin@eveinsight.net"
+ENV PGLOADER_PATH="/opt/pgloader/build/bin/pgloader"
+
+USER root
+RUN rm -f /InsightDocker/sqlite-latest.sqlite
 RUN apt-get update && apt-get install -y \
- python3 \
- python3-pip \
  sqlite3 \
- libpq-dev \
+ sbcl \
+ unzip \
+ libsqlite3-dev \
+ make \
+ curl \
+ gawk \
+ freetds-dev \
+ libzip-dev \
  postgresql-client-12
 RUN rm -rf /var/lib/apt/lists/*
 
-RUN mkdir /InsightMigratePython /app /home/insight
-RUN addgroup -gid 1007 insight
-RUN useradd --system --shell /bin/bash --home /app -u 1006 -g insight insight
-RUN chown insight:insight /InsightMigratePython /app /home/insight
-WORKDIR /InsightMigratePython
-USER insight
-COPY ./SQLiteToPostgresMigrate.py /InsightMigratePython/
-COPY ./requirements.txt /InsightMigratePython/
 USER root
-RUN pip3 install wheel setuptools
-RUN pip3 install --upgrade -r requirements.txt
+WORKDIR /opt
+RUN git clone -b $PGLOADER_VERSION --single-branch https://github.com/dimitri/pgloader.git --depth 1
+WORKDIR /opt/InsightMigrateTool
+RUN chown -R insight:insight /opt/pgloader
 USER insight
+WORKDIR /opt/pgloader
+RUN make pgloader
+
+USER root
+WORKDIR /opt/InsightMigrateTool
+COPY ./InsightMigrateTool ./InsightMigrateTool
+COPY ./requirements.txt ./
+RUN chown -R insight:insight /opt/InsightMigrateTool
+RUN find /opt/InsightMigrateTool -type f -exec chmod 0644 {} \;
+USER insight
+RUN pip3 install --upgrade -r requirements.txt
 WORKDIR /app
-ENTRYPOINT []
-CMD ["python3", "/InsightMigratePython/SQLiteToPostgresMigrate.py"]
+ENTRYPOINT ["python3", "/opt/InsightMigrateTool/InsightMigrateTool/SQLiteToPostgresMigrate.py"]
 
