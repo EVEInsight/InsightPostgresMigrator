@@ -36,7 +36,7 @@ RUN apt-get update && apt-get install -y \
  gawk \
  freetds-dev \
  libzip-dev \
- postgresql-client-12
+ postgresql-client-14
 RUN rm -rf /var/lib/apt/lists/*
 
 USER root
