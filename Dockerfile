@@ -13,7 +13,12 @@ ENV POSTGRES_PASSWORD=""
 ENV POSTGRES_DB=""
 ENV SQLITE_DB="Database.db"
 ENV INSIGHT_PATH="/InsightDocker/Insight/Insight"
-
+ENV PGLOADER_BatchRows = 25000
+ENV PGLOADER_BatchSize = "20 MB"
+ENV PGLOADER_PrefetchRows = 100000
+ENV PGLOADER_Workers = 4
+ENV PGLOADER_Concurrency = 1
+ENV PGLOADER_MaxParallelIndex = 6
 
 #do not change
 ENV DB_DRIVER="postgres"

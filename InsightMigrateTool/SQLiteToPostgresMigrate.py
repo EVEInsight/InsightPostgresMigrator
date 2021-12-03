@@ -21,7 +21,12 @@ INSIGHT_PATH = os.getenv("INSIGHT_PATH")
 PGLOADER_PATH = os.getenv("PGLOADER_PATH") if os.getenv("PGLOADER_PATH") is not None else "pgloader"
 pg_connection_str = "postgresql://{}:{}@{}:{}/{}".format(POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST,
                                                          POSTGRES_PORT, POSTGRES_DB)
-
+PGLOADER_BatchRows = os.getenv("PGLOADER_BatchRows")
+PGLOADER_BatchSize = os.getenv("PGLOADER_BatchSize")
+PGLOADER_PrefetchRows = os.getenv("PGLOADER_PrefetchRows")
+PGLOADER_Workers = os.getenv("PGLOADER_Workers")
+PGLOADER_Concurrency = os.getenv("PGLOADER_Concurrency")
+PGLOADER_MaxParallelIndex = os.getenv("PGLOADER_MaxParallelIndex")
 
 def dump_schema(schema_file):
     try:
@@ -312,12 +317,16 @@ def run_migration(log_file: str):
     print("Running migration from SQLite to Postgres. The summary log is located at {}. "
           "This may take some time...".format(log_file))
     try:
-        cmd = '{} --on-error-stop --summary {} --with "prefetch rows = 50000" ' \
+        cmd = '{} --on-error-stop --summary {} ' \
+              '--with "batch rows = {}" --with "batch size = {}" --with "prefetch rows = {}" ' \
+              '--with "workers = {}" --with "concurrency = {}" --with "max parallel create index = {}" ' \
               '--with "data only" --with "truncate" --with "create no tables" --with "include no drop" ' \
               '--with "create no indexes" --with "drop indexes" --with "on error stop" --with "reset sequences" ' \
               '--with "quote identifiers" --set "client_min_messages = \'error\'" ' \
               '{} ' \
-              '{} {}'.format(PGLOADER_PATH, log_file, get_cast_rules(), SQLITE_PATH, pg_connection_str)
+              '{} {}'.format(PGLOADER_PATH, log_file, PGLOADER_BatchRows, PGLOADER_BatchSize, PGLOADER_PrefetchRows,
+                             PGLOADER_Workers, PGLOADER_Concurrency, PGLOADER_MaxParallelIndex, get_cast_rules(),
+                             SQLITE_PATH, pg_connection_str)
         r = subprocess.run(cmd, shell=True)
         if r.returncode == 0:
             print("{} - Success migrating the database!".format(datetime.datetime.utcnow()))
