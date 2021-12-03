@@ -190,6 +190,21 @@ def sqlite_remediation(table):
         if connection:
             connection.close()
 
+def sqlite_remediate_query(q):
+    connection = None
+    try:
+        connection = sqlite3.connect(SQLITE_PATH)
+        c = connection.cursor()
+        c.execute(q)
+        connection.commit()
+    except Exception as ex:
+        print(ex)
+        traceback.print_exc()
+        sys.exit(1)
+    finally:
+        if connection:
+            connection.close()
+
 
 def sqlite_apply_remediations():
     print("Applying remediation to SQLite before migration...")
@@ -202,6 +217,7 @@ def sqlite_apply_remediations():
     sqlite_remediation("filter_regions")
     sqlite_remediation("filter_systems")
     sqlite_remediation("filter_types")
+    sqlite_remediate_query("UPDATE \"discord_capRadar\" SET max_km_age = 2000000000 where max_km_age > 2000000000;")
 
 
 def cast_rules():
