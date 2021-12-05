@@ -357,9 +357,9 @@ def run_migration(log_file: str):
 def main():
     start_time = datetime.datetime.utcnow()
     t = datetime.datetime.utcnow().strftime("%d-%m-Y-%H%M%S")
-    check_sqlite_db_version()
-    check_postgres_db()
     if not IntegrityCheckOnly:
+        check_sqlite_db_version()
+        check_postgres_db()
         import_insight_schema()
         sqlite_apply_remediations()
         dump_schema("/app/schema_preimport_{}.sql".format(t))
