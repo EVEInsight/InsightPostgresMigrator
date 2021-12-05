@@ -11,7 +11,7 @@ import decimal
 from psycopg2 import extras
 
 REQUIRED_SQLITE_VERSION = LooseVersion("v2.6.0")
-IntegrityCheckOnly = bool(os.getenv("IntegrityCheckOnly"))
+IntegrityCheckOnly = bool(os.getenv("IntegrityCheckOnly").lower() in ["true", "t"])
 SQLITE_PATH = os.getenv("SQLITE_DB")
 POSTGRES_HOST = os.getenv("POSTGRES_HOST")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT")
