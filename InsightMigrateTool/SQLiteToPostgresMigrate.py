@@ -11,6 +11,7 @@ import decimal
 from psycopg2 import extras
 
 REQUIRED_SQLITE_VERSION = LooseVersion("v2.6.0")
+IntegrityCheckOnly = bool(os.getenv("IntegrityCheckOnly"))
 SQLITE_PATH = os.getenv("SQLITE_DB")
 POSTGRES_HOST = os.getenv("POSTGRES_HOST")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT")
@@ -358,13 +359,16 @@ def main():
     t = datetime.datetime.utcnow().strftime("%d-%m-Y-%H%M%S")
     check_sqlite_db_version()
     check_postgres_db()
-    import_insight_schema()
-    sqlite_apply_remediations()
-    dump_schema("/app/schema_preimport_{}.sql".format(t))
-    log_file = "/app/postgres_migrate_{}.log".format(t)
-    run_migration(log_file)
-    dump_schema("/app/schema_postimport_{}.sql".format(t))
-    check_summary(log_file)
+    if not IntegrityCheckOnly:
+        import_insight_schema()
+        sqlite_apply_remediations()
+        dump_schema("/app/schema_preimport_{}.sql".format(t))
+        log_file = "/app/postgres_migrate_{}.log".format(t)
+        run_migration(log_file)
+        dump_schema("/app/schema_postimport_{}.sql".format(t))
+        check_summary(log_file)
+    else:
+        print("Running database integrity checks only.")
     run_integrity_checks()
     total_seconds = (datetime.datetime.utcnow() - start_time).total_seconds()
     print("Success! All data was successfully copied to postgres! You may start using the newly migrated "

@@ -5,6 +5,7 @@ LABEL url="https://github.com/Nathan-LS/InsightPostgresMigrator"
 LABEL maintainer="nathan@nathan-s.com"
 
 ARG PGLOADER_VERSION="master"
+ENV IntegrityCheckOnly="false"
 ENV PYTHONUNBUFFERED=1
 ENV POSTGRES_HOST=""
 ENV POSTGRES_PORT=5432
