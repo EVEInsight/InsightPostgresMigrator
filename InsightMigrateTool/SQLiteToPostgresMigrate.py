@@ -222,8 +222,8 @@ def sqlite_apply_remediations():
 
 
 def cast_rules():
-    yield "tokens.refresh_token to varchar"
-    yield "tokens.token to varchar"
+    yield "column tokens.refresh_token to varchar"
+    yield "column tokens.token to varchar"
 
 
 def get_cast_rules():
