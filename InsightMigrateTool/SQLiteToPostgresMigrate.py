@@ -222,7 +222,8 @@ def sqlite_apply_remediations():
 
 
 def cast_rules():
-    yield "type integer to integer using integer-to-string"
+    yield "tokens.refresh_token to varchar"
+    yield "tokens.token to varchar"
 
 
 def get_cast_rules():
