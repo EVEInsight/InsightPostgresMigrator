@@ -50,7 +50,7 @@ def dict_factory(cursor, row):
     return d
 
 
-def migration_check_integrity(table: str, sort_by: list):
+def migration_check_integrity(table: str, sort_by_sqlite: list, sort_by_postgres: list=None):
     connection_sqlite = None
     connection_postgres = None
     query_count = "SELECT count(*) as count FROM {};".format(table)
@@ -76,9 +76,16 @@ def migration_check_integrity(table: str, sort_by: list):
         while True:
             if offset >= total_row_count:
                 break
-            query_all = "SELECT * FROM {} order by {} limit 2000000 offset {};".format(table, ",".join(sort_by), offset)
-            cursor_sqlite.execute(query_all)
-            cursor_postgres.execute(query_all)
+            query_sqlite = "SELECT * FROM {} order by {} limit 2000000 offset {};".format(table,
+                                                                                          ",".join(sort_by_sqlite), offset)
+            cursor_sqlite.execute(query_sqlite)
+            if sort_by_postgres is None:
+                cursor_postgres.execute(query_sqlite)
+            else:
+                query_postgres = "SELECT * FROM {} order by {} limit 2000000 offset {};".format(table,
+                                                                                              ",".join(sort_by_postgres),
+                                                                                              offset)
+                cursor_postgres.execute(query_postgres)
             while True:
                 result_sqlite = cursor_sqlite.fetchone()
                 result_postgres = cursor_postgres.fetchone()
@@ -134,14 +141,14 @@ def run_integrity_checks():
     migration_check_integrity("categories", ["category_id"])
     migration_check_integrity("characters", ["character_id"])
     migration_check_integrity("constellations", ["constellation_id"])
-    migration_check_integrity("contacts_alliances", ["token", "owner", "alliance_id"])
-    migration_check_integrity("contacts_characters", ["token", "owner", "character_id"])
-    migration_check_integrity("contacts_corporations", ["token", "owner", "corporation_id"])
+    migration_check_integrity("contacts_alliances", ["token", "CAST(owner as text)", "alliance_id"])
+    migration_check_integrity("contacts_characters", ["token", "CAST(owner as text)", "character_id"])
+    migration_check_integrity("contacts_corporations", ["token", "CAST(owner as text)", "corporation_id"])
     migration_check_integrity("corporations", ["corporation_id"])
     migration_check_integrity("\"discord_capRadar\"", ["channel_id"])
     migration_check_integrity("discord_channels", ["channel_id"])
     migration_check_integrity("\"discord_enFeed\"", ["channel_id"])
-    migration_check_integrity("discord_prefixes", ["server_id", "prefix='$'", "prefix='?'", "prefix='!'", "prefix"]) # postgres sorts some symbols in different order than sqlite
+    migration_check_integrity("discord_prefixes", ["server_id", "prefix"], ["server_id", "prefix COLLATE \"C\""]) # postgres sorts some symbols in different order than sqlite
     migration_check_integrity("discord_servers", ["server_id"])
     migration_check_integrity("discord_tokens", ["channel_id", "token"])
     migration_check_integrity("discord_users", ["user_id"])
