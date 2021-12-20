@@ -12,6 +12,7 @@ from psycopg2 import extras
 
 REQUIRED_SQLITE_VERSION = LooseVersion("v2.6.0")
 IntegrityCheckOnly = bool(os.getenv("IntegrityCheckOnly").lower() in ["true", "t"])
+PerformIntegrityCheck = bool(os.getenv("PerformIntegrityCheck").lower() in ["true", "t"])
 SQLITE_PATH = os.getenv("SQLITE_DB")
 POSTGRES_HOST = os.getenv("POSTGRES_HOST")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT")
@@ -389,7 +390,10 @@ def main():
         check_summary(log_file)
     else:
         print("Running database integrity checks only.")
-    run_integrity_checks()
+    if PerformIntegrityCheck:
+        run_integrity_checks()
+    else:
+        print("A full integrity check was not ran against both databases. Run this script with PerformIntegrityCheck=true to perform the integrity check. Note: This check can take a while on larger databases.")
     total_seconds = (datetime.datetime.utcnow() - start_time).total_seconds()
     print("Success! All data was successfully copied to postgres! You may start using the newly migrated "
           "postgres database with Insight!\n\nTotal time taken: {}s".format(total_seconds))

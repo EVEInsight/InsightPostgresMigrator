@@ -5,7 +5,9 @@ LABEL url="https://github.com/Nathan-LS/InsightPostgresMigrator"
 LABEL maintainer="nathan@nathan-s.com"
 
 ARG PGLOADER_VERSION="master"
+ARG PGClient_VERSION="14"
 ENV IntegrityCheckOnly="false"
+ENV PerformIntegrityCheck="true"
 ENV PYTHONUNBUFFERED=1
 ENV POSTGRES_HOST=""
 ENV POSTGRES_PORT=5432
@@ -42,7 +44,7 @@ RUN apt-get update && apt-get install -y \
  gawk \
  freetds-dev \
  libzip-dev \
- postgresql-client-14
+ postgresql-client-$PGClient_VERSION
 RUN rm -rf /var/lib/apt/lists/*
 
 USER root
