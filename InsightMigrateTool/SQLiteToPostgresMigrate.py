@@ -121,7 +121,7 @@ def migration_check_integrity(table: str, sort_by_sqlite: list, sort_by_postgres
                             item_postgres = float(item_postgres.normalize())
 
                         #override for types price table where decimal conversion is slightly off
-                        if column_key == "basePrice":
+                        if (column_key == "basePrice") and (item_sqlite is not None or item_postgres is not None):
                             if abs(item_sqlite - item_postgres) >= .05:
                                 print("Error - Row not copied successfully on column '{}'. SQLite: '{}' Postgres: '{}'".
                                       format(column_key, result_sqlite, result_postgres))
