@@ -107,6 +107,7 @@ def migration_check_integrity(table: str, sort_by_sqlite: list, sort_by_postgres
                     for column_key in result_sqlite.keys():
                         item_sqlite = result_sqlite[column_key]
                         item_postgres = result_postgres[column_key]
+                        # overrides
                         if isinstance(item_sqlite, int) and isinstance(item_postgres, bool):
                             item_sqlite = bool(item_sqlite)
                         if isinstance(item_postgres, datetime.datetime):
@@ -118,6 +119,17 @@ def migration_check_integrity(table: str, sort_by_sqlite: list, sort_by_postgres
                                 and isinstance(item_postgres, decimal.Decimal):
                             item_sqlite = float(item_sqlite)
                             item_postgres = float(item_postgres.normalize())
+
+                        #override for types price table where decimal conversion is slightly off
+                        if column_key == "basePrice":
+                            if abs(item_sqlite - item_postgres) >= .05:
+                                print("Error - Row not copied successfully on column '{}'. SQLite: '{}' Postgres: '{}'".
+                                      format(column_key, result_sqlite, result_postgres))
+                                sys.exit(1)
+                            else:
+                                continue
+
+                        #actual compare
                         if (item_sqlite != item_postgres) or (type(item_sqlite) != type(item_postgres)):
                             print("Error - Row not copied successfully on column '{}'. SQLite: '{}' Postgres: '{}'".
                                   format(column_key, result_sqlite, result_postgres))
