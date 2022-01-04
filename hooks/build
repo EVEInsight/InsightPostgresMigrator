@@ -1,5 +1,5 @@
 #!/bin/bash
 
-docker build --build-arg INSIGHT_BRANCH="master" -t $DOCKER_REPO:master .
-docker build --build-arg INSIGHT_BRANCH="development" -t $DOCKER_REPO:development .
+#docker build --build-arg INSIGHT_TAG="latest" -t $DOCKER_REPO:latest .
+docker build --build-arg INSIGHT_TAG="development" -t $DOCKER_REPO:development .
 docker push $DOCKER_REPO:development

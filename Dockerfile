@@ -1,8 +1,8 @@
-ARG INSIGHT_BRANCH=master
-FROM nathanls/insight:$INSIGHT_BRANCH
+ARG INSIGHT_TAG="latest"
+FROM nathanls/insight:$INSIGHT_TAG
 
-LABEL url="https://github.com/Nathan-LS/InsightPostgresMigrator"
-LABEL maintainer="nathan@nathan-s.com"
+LABEL url="https://github.com/EVEInsight/InsightPostgresMigrator"
+LABEL maintainer="maintainers@eveinsight.net"
 
 ARG PGLOADER_VERSION="master"
 ARG PGClient_VERSION="14"
