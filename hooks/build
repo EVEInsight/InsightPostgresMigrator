@@ -1,9 +1,12 @@
 #!/bin/bash
 
-docker build --build-arg INSIGHT_TAG="latest" -f $DOCKERFILE_PATH -t $IMAGE_NAME .
-docker tag $IMAGE_NAME $DOCKER_REPO:latest
+if [[ "$SOURCE_BRANCH" == "master" ]]; then
+  docker build --build-arg INSIGHT_TAG="latest" -f $DOCKERFILE_PATH -t $IMAGE_NAME .
+  docker tag $IMAGE_NAME $DOCKER_REPO:latest
+fi
 
-docker build --build-arg INSIGHT_TAG="development" -f $DOCKERFILE_PATH -t $DOCKER_REPO:development .
-docker tag $DOCKER_REPO:development $DOCKER_REPO:development
+if [[ "$SOURCE_BRANCH" == "development" ]]; then
+  docker build --build-arg INSIGHT_TAG="development" -f $DOCKERFILE_PATH -t $IMAGE_NAME .
+  docker tag $IMAGE_NAME $DOCKER_REPO:development
+fi
 
-docker push $DOCKER_REPO:development
