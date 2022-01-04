@@ -1,8 +1,8 @@
 #!/bin/bash
 
 if [[ "$SOURCE_BRANCH" == "master" ]]; then
-  docker build --build-arg INSIGHT_TAG="latest" -f $DOCKERFILE_PATH -t $DOCKER_REPO:latest .
-  docker build --build-arg INSIGHT_TAG="development" -f $DOCKERFILE_PATH -t $DOCKER_REPO:development .
+  docker push $DOCKER_REPO:latest
+  docker push $DOCKER_REPO:development
 fi
 
 #if [[ "$SOURCE_BRANCH" == "development" ]]; then
