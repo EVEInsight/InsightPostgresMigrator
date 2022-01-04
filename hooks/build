@@ -1,5 +1,6 @@
 #!/bin/bash
 
-#docker build --build-arg INSIGHT_TAG="latest" -t $DOCKER_REPO:latest .
+docker build --build-arg INSIGHT_TAG="latest" -f $DOCKERFILE_PATH -t $IMAGE_NAME .
 docker build --build-arg INSIGHT_TAG="development" -t $DOCKER_REPO:development .
+
 docker push $DOCKER_REPO:development
