@@ -9,6 +9,7 @@ import datetime
 from dateutil.parser import parse as dateTimeParser
 import decimal
 from psycopg2 import extras
+import filecmp
 
 REQUIRED_SQLITE_VERSION = LooseVersion("v2.6.0")
 IntegrityCheckOnly = bool(os.getenv("IntegrityCheckOnly").lower() in ["true", "t"])
@@ -350,6 +351,13 @@ def check_summary(log_file: str):
     else:
         print("\nDatabase migrate summary reports no errors.")
 
+def check_schema(pre, post):
+    if not filecmp.cmp(pre, post):
+        print("\nSQL schema export file content differs. It is possible that the schema was imported incorrectly.\n\n"
+              "{} compared with {}".format(pre, post))
+        sys.exit(1)
+    else:
+        print("\nSchema exports match between {} and {}\n".format(pre, post))
 
 def run_migration(log_file: str):
     print("Running migration from SQLite to Postgres. The summary log is located at {}. "
@@ -387,6 +395,7 @@ def main():
         log_file = "/app/postgres_migrate_{}.log".format(t)
         run_migration(log_file)
         dump_schema("/app/schema_postimport_{}.sql".format(t))
+        check_schema("/app/schema_preimport_{}.sql".format(t), "/app/schema_postimport_{}.sql".format(t))
         check_summary(log_file)
     else:
         print("Running database integrity checks only.")
